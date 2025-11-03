@@ -117,6 +117,26 @@ export interface RewardRedeemedEvent {
   type: "reward_redeemed";
 }
 
+export interface KicksGiftedEvent {
+  gift_transaction_id: string;
+  message: string;
+  sender: {
+    id: number;
+    username: string;
+    username_color: string;
+  };
+  gift: {
+    gift_id: string;
+    name: string;
+    amount: number;
+    type: string;
+    tier: string;
+    character_limit: number;
+    pinned_time: number;
+  };
+  type: "kicks_gifted";
+}
+
 // Array de todos los eventos disponibles
 export const KICK_EVENTS = [
   "ChatMessage",
@@ -130,6 +150,7 @@ export const KICK_EVENTS = [
   "PollUpdate",
   "PollDelete",
   "RewardRedeemed",
+  "KicksGifted",
   "ready",
   "disconnect",
   "error",
@@ -152,6 +173,7 @@ export interface EventDataMap {
   PollUpdate: PollUpdateEvent;
   PollDelete: PollDeleteEvent;
   RewardRedeemed: RewardRedeemedEvent;
+  KicksGifted: KicksGiftedEvent;
   ready: { channel: string };
   disconnect: { reason?: string };
   error: Error;
@@ -171,6 +193,7 @@ export type KickEventData =
   | PollUpdateEvent
   | PollDeleteEvent
   | RewardRedeemedEvent
+  | KicksGiftedEvent
   | { channel: string } // ready event
   | { reason?: string } // disconnect event
   | Error // error event
@@ -292,6 +315,25 @@ export interface RawRewardRedeemedData {
   username: string;
   user_input: string;
   reward_background_color: string;
+}
+
+export interface RawKicksGiftedData {
+  gift_transaction_id: string;
+  message: string;
+  sender: {
+    id: number;
+    username: string;
+    username_color: string;
+  };
+  gift: {
+    gift_id: string;
+    name: string;
+    amount: number;
+    type: string;
+    tier: string;
+    character_limit: number;
+    pinned_time: number;
+  };
 }
 
 // Tipo para mensajes de suscripción personalizados

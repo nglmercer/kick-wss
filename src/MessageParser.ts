@@ -12,6 +12,7 @@ import type {
   PollUpdateEvent,
   PollDeleteEvent,
   RewardRedeemedEvent,
+  KicksGiftedEvent,
   KickEventType,
   KickEventData,
   RawChatMessageData,
@@ -25,6 +26,7 @@ import type {
   RawPollUpdateData,
   RawPollDeleteData,
   RawRewardRedeemedData,
+  RawKicksGiftedData,
 } from "./types.js";
 
 export enum KickEvent {
@@ -39,6 +41,7 @@ export enum KickEvent {
   PollUpdate = "App\\Events\\PollUpdateEvent",
   PollDelete = "App\\Events\\PollDeleteEvent",
   RewardRedeemed = "RewardRedeemedEvent",
+  KicksGifted = "KicksGifted",
 }
 
 export class MessageParser {
@@ -153,6 +156,12 @@ export class MessageParser {
           return {
             type: "RewardRedeemed",
             data: this.parseRewardRedeemed(eventData as RawRewardRedeemedData),
+          };
+
+        case KickEvent.KicksGifted:
+          return {
+            type: "KicksGifted",
+            data: this.parseKicksGifted(eventData as RawKicksGiftedData),
           };
 
         default:
@@ -336,6 +345,31 @@ export class MessageParser {
       user_input: data.user_input,
       reward_background_color: data.reward_background_color,
       type: "reward_redeemed",
+    };
+  }
+
+  /**
+   * Parsea un evento de Kicks regalados
+   */
+  private static parseKicksGifted(data: RawKicksGiftedData): KicksGiftedEvent {
+    return {
+      gift_transaction_id: data.gift_transaction_id,
+      message: data.message,
+      sender: {
+        id: data.sender.id,
+        username: data.sender.username,
+        username_color: data.sender.username_color,
+      },
+      gift: {
+        gift_id: data.gift.gift_id,
+        name: data.gift.name,
+        amount: data.gift.amount,
+        type: data.gift.type,
+        tier: data.gift.tier,
+        character_limit: data.gift.character_limit,
+        pinned_time: data.gift.pinned_time,
+      },
+      type: "kicks_gifted",
     };
   }
 

@@ -24,6 +24,7 @@ export enum KickEvent {
   StreamHost = "App\\Events\\StreamHostEvent",
   PollUpdate = "App\\Events\\PollUpdateEvent",
   PollDelete = "App\\Events\\PollDeleteEvent",
+  KicksGifted = "KicksGifted",
 }
 
 // Mapeo de eventos de Kick a tipos estándar
@@ -38,6 +39,7 @@ const EVENT_TYPE_MAP: Record<string, keyof EventDataMap> = {
   [KickEvent.StreamHost]: "StreamHost",
   [KickEvent.PollUpdate]: "PollUpdate",
   [KickEvent.PollDelete]: "PollDelete",
+  [KickEvent.KicksGifted]: "KicksGifted",
 };
 
 
