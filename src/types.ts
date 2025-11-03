@@ -1,5 +1,37 @@
 // Definiciones de tipos para la librería WebSocket de Kick.com
 
+// Enum para eventos de Kick (centralizado para mantener consistencia)
+export enum KickEvent {
+  ChatMessage = "App\\Events\\ChatMessageEvent",
+  MessageDeleted = "App\\Events\\MessageDeletedEvent",
+  UserBanned = "App\\Events\\UserBannedEvent",
+  UserUnbanned = "App\\Events\\UserUnbannedEvent",
+  Subscription = "App\\Events\\SubscriptionEvent",
+  GiftedSubscriptions = "App\\Events\\GiftedSubscriptionsEvent",
+  PinnedMessageCreated = "App\\Events\\PinnedMessageCreatedEvent",
+  StreamHost = "App\\Events\\StreamHostEvent",
+  PollUpdate = "App\\Events\\PollUpdateEvent",
+  PollDelete = "App\\Events\\PollDeleteEvent",
+  RewardRedeemed = "RewardRedeemedEvent",
+  KicksGifted = "KicksGifted",
+}
+
+// Mapeo para compatibilidad con nombres antiguos
+export const LEGACY_EVENT_MAPPING: Record<string, string> = {
+  "App\\Events\\ChatMessageEvent": "ChatMessageEvent",
+  "App\\Events\\MessageDeletedEvent": "MessageDeletedEvent",
+  "App\\Events\\UserBannedEvent": "UserBannedEvent",
+  "App\\Events\\UserUnbannedEvent": "UserUnbannedEvent",
+  "App\\Events\\SubscriptionEvent": "SubscriptionEvent",
+  "App\\Events\\GiftedSubscriptionsEvent": "GiftedSubscriptionsEvent",
+  "App\\Events\\PinnedMessageCreatedEvent": "PinnedMessageCreatedEvent",
+  "App\\Events\\StreamHostEvent": "StreamHostEvent",
+  "App\\Events\\PollUpdateEvent": "PollUpdateEvent",
+  "App\\Events\\PollDeleteEvent": "PollDeleteEvent",
+  "App\\Events\\RewardRedeemedEvent": "RewardRedeemedEvent",
+  "App\\Events\\KicksGiftedEvent": "KicksGiftedEvent",
+};
+
 export interface KickMessage {
   id: string;
   content: string;

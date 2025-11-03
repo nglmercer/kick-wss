@@ -7,7 +7,7 @@ Una librería ligera y sin dependencias para conectar a los WebSockets de Kick.c
 - 🚀 **Ligera**: Sin dependencias externas, solo usa WebSocket nativo
 - 🔌 **Simple**: API intuitiva y fácil de usar
 - 🔄 **Auto-reconexión**: Reconexión automática configurable
-- 📊 **Buffer de mensajes**: Opcional, para análisis de datos
+- 📊 **Filtrado de eventos**: Escucha solo los eventos que necesitas
 - 🎯 **Filtrado de eventos**: Escucha solo los eventos que necesitas
 - 🛠️ **TypeScript**: Soporte completo de tipos
 - 📝 **Debug mode**: Registro detallado para desarrollo
@@ -111,42 +111,6 @@ La librería es compatible con navegadores modernos que soportan WebSocket API. 
 
 Para más detalles sobre el uso en navegador, consulta [BROWSER.md](./BROWSER.md).
 
-## Métodos de Conveniencia
-
-### Escuchar tipos específicos de eventos
-
-```typescript
-// Solo mensajes de chat
-kickWS.onChatMessage((message) => {
-  console.log('Mensaje:', message.content);
-});
-
-// Solo bans de usuarios
-kickWS.onUserBanned((ban) => {
-  console.log('Usuario baneado:', ban.username);
-});
-
-// Solo suscripciones
-kickWS.onSubscription((sub) => {
-  console.log('Nueva suscripción:', sub.username);
-});
-
-// Todos los eventos de chat
-kickWS.onChatEvents((event) => {
-  console.log('Evento de chat:', event);
-});
-
-// Todos los eventos de usuarios
-kickWS.onUserEvents((event) => {
-  console.log('Evento de usuario:', event);
-});
-
-// Todos los eventos en general
-kickWS.onAllEvents((event) => {
-  console.log('Evento:', event);
-});
-```
-
 ## Configuración Avanzada
 
 ### Opciones disponibles
@@ -156,8 +120,7 @@ const options = {
   debug: false,              // Mostrar logs de debug
   autoReconnect: true,       // Reconectar automáticamente
   reconnectInterval: 5000,   // Intervalo de reconexión (ms)
-  enableBuffer: false,       // Habilitar buffer de mensajes
-  bufferSize: 1000,          // Tamaño máximo del buffer
+  connectionTimeout: 10000,  // Timeout de conexión (ms)
   filteredEvents: []         // Eventos a escuchar (vacío = todos)
 };
 
@@ -182,34 +145,63 @@ kickWS = new KickWebSocket({
 
 // Escuchar categorías específicas
 kickWS = new KickWebSocket({
-  filteredEvents: KICK_EVENTS.filter(event => 
+  filteredEvents: KICK_EVENTS.filter(event =>
     event.includes('Chat') || event.includes('User')
   )
 });
 ```
 
-### Buffer de mensajes para análisis
+### Usando Enums para eventos
 
 ```typescript
-kickWS = new KickWebSocket({
-  enableBuffer: true,
-  bufferSize: 2000
+// Importar el enum KickEvent
+import { KickEvent } from 'kick-wss';
+
+// Usar valores del enum para mejor seguridad de tipos
+kickWS.on(KickEvent.ChatMessage, (message) => {
+  console.log(`${message.sender.username}: ${message.content}`);
 });
 
-// Obtener mensajes del buffer
-const messages = kickWS.getMessageBuffer();
-console.log(`Buffer tiene ${messages.length} mensajes`);
-
-// Limpiar buffer
-kickWS.clearMessageBuffer();
+// Filtrar eventos usando valores del enum
+kickWS = new KickWebSocket({
+  filteredEvents: [
+    KickEvent.ChatMessage,
+    KickEvent.UserBanned,
+    KickEvent.Subscription
+  ]
+});
 ```
 
-## Convenience Methods
+## Métodos de Conveniencia
 
-### Debug Mode
+### Modo Debug
 
 ```typescript
 const kickWS = KickWebSocket.createDebug('canal-name');
+```
+
+### Métodos de categorías de eventos
+
+```typescript
+// Escuchar todos los eventos de chat
+kickWS.onChatEvents((event) => {
+  console.log('Evento de chat:', event);
+});
+
+// Escuchar todos los eventos de usuarios
+kickWS.onUserEvents((event) => {
+  console.log('Evento de usuario:', event);
+});
+
+// Escuchar todos los eventos de stream
+kickWS.onStreamEvents((event) => {
+  console.log('Evento de stream:', event);
+});
+
+// Escuchar todos los eventos
+kickWS.onAllEvents((event) => {
+  console.log('Cualquier evento:', event);
+});
 ```
 
 ## Eventos Disponibles
@@ -301,15 +293,15 @@ channels.forEach(channel => {
 ### Analizador de actividad en tiempo real
 
 ```typescript
+import { KickEvent } from 'kick-wss';
+
 const kickWS = new KickWebSocket({
   debug: true,
-  enableBuffer: true,
-  bufferSize: 2000,
   filteredEvents: [
-    'ChatMessage',
-    'UserBanned', 
-    'Subscription',
-    'GiftedSubscriptions'
+    KickEvent.ChatMessage,
+    KickEvent.UserBanned,
+    KickEvent.Subscription,
+    KickEvent.GiftedSubscriptions
   ]
 });
 
@@ -319,9 +311,9 @@ let messageCount = 0;
 let subscriberCount = 0;
 let banCount = 0;
 
-kickWS.onChatMessage(() => messageCount++);
-kickWS.onSubscription(() => subscriberCount++);
-kickWS.onUserBanned(() => banCount++);
+kickWS.on(KickEvent.ChatMessage, () => messageCount++);
+kickWS.on(KickEvent.Subscription, () => subscriberCount++);
+kickWS.on(KickEvent.UserBanned, () => banCount++);
 
 // Reporte cada minuto
 setInterval(() => {
@@ -382,10 +374,23 @@ function sendNotification(message: string) {
 
 - `getChannelName(): string` - Nombre del canal actual
 - `getChannelId(): number` - ID del canal actual
-- `getMessageBuffer(): string[]` - Obtener buffer de mensajes
-- `clearMessageBuffer(): void` - Limpiar buffer
-- `getStats(): object` - Obtener estadísticas
+- `getConnectionState(): ConnectionState` - Obtener estado de conexión
+- `isConnected(): boolean` - Verificar si está conectado
 - `updateOptions(options): void` - Actualizar configuración
+
+### Métodos de Configuración WebSocket
+
+- `setWebSocketConfig(config): void` - Establecer URL y parámetros del WebSocket
+- `getWebSocketConfig(): WebSocketConfig` - Obtener configuración actual del WebSocket
+- `resetWebSocketConfig(): void` - Restablecer configuración por defecto
+
+### Métodos de Gestión de Suscripciones
+
+- `subscribeToChannel(channel): void` - Suscribirse a canal adicional
+- `unsubscribeFromChannel(channel): void` - Desuscribirse de canal
+- `addCustomSubscriptions(channels): void` - Añadir canales de suscripción personalizados
+- `clearCustomSubscriptions(): void` - Limpiar todas las suscripciones personalizadas
+- `getCustomSubscriptions(): object` - Obtener suscripciones personalizadas actuales
 
 ## Limitaciones
 

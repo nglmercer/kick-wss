@@ -2,7 +2,7 @@
 export { WebSocketManager } from "./WebSocketManager.js";
 export { EventEmitter } from "./EventEmitter.js";
 export { MessageParser } from "./MessageParser.js";
-// Exportar tipos
+// Exportar tipos y enums
 export type {
   KickMessage,
   KickUser,
@@ -27,6 +27,9 @@ export type {
   IKickWebSocket,
   EventDataMap,
 } from "./types.js";
+
+// Exportar enums
+export { KickEvent, LEGACY_EVENT_MAPPING } from "./types.js";
 
 // Clase principal simplificada para uso fácil
 import { WebSocketManager } from "./WebSocketManager.js";

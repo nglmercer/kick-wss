@@ -29,20 +29,7 @@ import type {
   RawKicksGiftedData,
 } from "./types.js";
 
-export enum KickEvent {
-  ChatMessage = "App\\Events\\ChatMessageEvent",
-  MessageDeleted = "App\\Events\\MessageDeletedEvent",
-  UserBanned = "App\\Events\\UserBannedEvent",
-  UserUnbanned = "App\\Events\\UserUnbannedEvent",
-  Subscription = "App\\Events\\SubscriptionEvent",
-  GiftedSubscriptions = "App\\Events\\GiftedSubscriptionsEvent",
-  PinnedMessageCreated = "App\\Events\\PinnedMessageCreatedEvent",
-  StreamHost = "App\\Events\\StreamHostEvent",
-  PollUpdate = "App\\Events\\PollUpdateEvent",
-  PollDelete = "App\\Events\\PollDeleteEvent",
-  RewardRedeemed = "RewardRedeemedEvent",
-  KicksGifted = "KicksGifted",
-}
+import { KickEvent, LEGACY_EVENT_MAPPING } from "./types.js";
 
 export class MessageParser {
   /**
@@ -50,18 +37,15 @@ export class MessageParser {
    */
   static parseMessage(
     rawMessage: string,
-  ): { type: KickEventType; data: KickEventData } | null {
+  ): { type: KickEventType; data: KickEventData; legacyType?: string } | null {
     try {
       if (!rawMessage || rawMessage.trim() === "") {
         return null;
       }
-
       const message: WebSocketMessage = JSON.parse(rawMessage);
-
       if (!message.event || message.data === undefined) {
         return null;
       }
-
       // Ignorar mensajes de sistema del WebSocket
       if (
         message.event.startsWith("pusher:") ||
@@ -69,11 +53,9 @@ export class MessageParser {
       ) {
         return null;
       }
-
       if (message.event === "" || message.data === "") {
         return null;
       }
-
       // Parsear los datos del evento
       let eventData: unknown;
       try {
@@ -85,85 +67,94 @@ export class MessageParser {
         console.error("Error parsing event data:", e);
         return null;
       }
-
+      
+      // Normalizar evento: soporta ambos formatos (con y sin namespace)
+      const normalizedEvent = LEGACY_EVENT_MAPPING[message.event] || message.event;
+      
+      // Guardar el formato original para retrocompatibilidad
+      const originalEvent = message.event;
+      const isLegacyFormat = message.event !== normalizedEvent;
+      
       // Mapear eventos usando el enum
-      switch (message.event) {
+      let result: { type: KickEventType; data: KickEventData; legacyType?: string } | null = null;
+      
+      switch (normalizedEvent) {
         case KickEvent.ChatMessage:
-          return {
+          result = {
             type: "ChatMessage",
             data: this.parseChatMessage(eventData as RawChatMessageData),
           };
-
+          break;
         case KickEvent.MessageDeleted:
-          return {
+          result = {
             type: "MessageDeleted",
             data: this.parseMessageDeleted(eventData as RawMessageDeletedData),
           };
-
+          break;
         case KickEvent.UserBanned:
-          return {
+          result = {
             type: "UserBanned",
             data: this.parseUserBanned(eventData as RawUserBannedData),
           };
-
+          break;
         case KickEvent.UserUnbanned:
-          return {
+          result = {
             type: "UserUnbanned",
             data: this.parseUserUnbanned(eventData as RawUserUnbannedData),
           };
-
+          break;
         case KickEvent.Subscription:
-          return {
+          result = {
             type: "Subscription",
             data: this.parseSubscription(eventData as RawSubscriptionData),
           };
-
+          break;
         case KickEvent.GiftedSubscriptions:
-          return {
+          result = {
             type: "GiftedSubscriptions",
             data: this.parseGiftedSubscriptions(
               eventData as RawGiftedSubscriptionsData,
             ),
           };
-
+          break;
         case KickEvent.PinnedMessageCreated:
-          return {
+          result = {
             type: "PinnedMessageCreated",
             data: this.parsePinnedMessageCreated(
               eventData as RawPinnedMessageCreatedData,
             ),
           };
-
+          break;
         case KickEvent.StreamHost:
-          return {
+          result = {
             type: "StreamHost",
             data: this.parseStreamHost(eventData as RawStreamHostData),
           };
-
+          break;
         case KickEvent.PollUpdate:
-          return {
+          result = {
             type: "PollUpdate",
             data: this.parsePollUpdate(eventData as RawPollUpdateData),
           };
-
+          break;
         case KickEvent.PollDelete:
-          return {
+          result = {
             type: "PollDelete",
             data: this.parsePollDelete(eventData as RawPollDeleteData),
           };
-
+          break;
         case KickEvent.RewardRedeemed:
-          return {
+          result = {
             type: "RewardRedeemed",
             data: this.parseRewardRedeemed(eventData as RawRewardRedeemedData),
           };
-
+          break;
         case KickEvent.KicksGifted:
-          return {
+          result = {
             type: "KicksGifted",
             data: this.parseKicksGifted(eventData as RawKicksGiftedData),
           };
-
+          break;
         default:
           if (
             !message.event?.startsWith("pusher:") &&
@@ -173,6 +164,13 @@ export class MessageParser {
           }
           return null;
       }
+      
+      // Si el evento venía en formato legacy, incluir ambos formatos
+      if (result && isLegacyFormat) {
+        result.legacyType = originalEvent;
+      }
+      
+      return result;
     } catch (error) {
       console.error("Error parsing message:", error);
       return null;

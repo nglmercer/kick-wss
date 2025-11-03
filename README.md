@@ -7,7 +7,7 @@ A lightweight and dependency-free library for connecting to Kick.com WebSockets.
 - 🚀 **Lightweight**: No external dependencies, uses native WebSocket only
 - 🔌 **Simple**: Intuitive and easy-to-use API
 - 🔄 **Auto-reconnection**: Configurable automatic reconnection
-- 📊 **Message Buffer**: Optional, for data analysis
+- 📊 **Event Filtering**: Listen only to the events you need
 - 🎯 **Event Filtering**: Listen only to the events you need
 - 🛠️ **TypeScript**: Full type support
 - 📝 **Debug Mode**: Detailed logging for development
@@ -111,42 +111,6 @@ kickWS.on('error', (error) => {
 
 For more details on browser usage, see [BROWSER.md](./BROWSER.md).
 
-## Convenience Methods
-
-### Listen to specific event types
-
-```typescript
-// Chat messages only
-kickWS.onChatMessage((message) => {
-  console.log('Message:', message.content);
-});
-
-// User bans only
-kickWS.onUserBanned((ban) => {
-  console.log('Banned user:', ban.username);
-});
-
-// Subscriptions only
-kickWS.onSubscription((sub) => {
-  console.log('New subscription:', sub.username);
-});
-
-// All chat events
-kickWS.onChatEvents((event) => {
-  console.log('Chat event:', event);
-});
-
-// All user events
-kickWS.onUserEvents((event) => {
-  console.log('User event:', event);
-});
-
-// All events in general
-kickWS.onAllEvents((event) => {
-  console.log('Event:', event);
-});
-```
-
 ## Advanced Configuration
 
 ### Available Options
@@ -156,8 +120,7 @@ const options = {
   debug: false,              // Show debug logs
   autoReconnect: true,       // Reconnect automatically
   reconnectInterval: 5000,   // Reconnection interval (ms)
-  enableBuffer: false,       // Enable message buffer
-  bufferSize: 1000,          // Maximum buffer size
+  connectionTimeout: 10000,  // Connection timeout (ms)
   filteredEvents: []         // Events to listen to (empty = all)
 };
 
@@ -182,26 +145,31 @@ kickWS = new KickWebSocket({
 
 // Listen to specific categories
 kickWS = new KickWebSocket({
-  filteredEvents: KICK_EVENTS.filter(event => 
+  filteredEvents: KICK_EVENTS.filter(event =>
     event.includes('Chat') || event.includes('User')
   )
 });
 ```
 
-### Message Buffer for Analysis
+### Using Enums for Events
 
 ```typescript
-kickWS = new KickWebSocket({
-  enableBuffer: true,
-  bufferSize: 2000
+// Import the KickEvent enum
+import { KickEvent } from 'kick-wss';
+
+// Use enum values for better type safety
+kickWS.on(KickEvent.ChatMessage, (message) => {
+  console.log(`${message.sender.username}: ${message.content}`);
 });
 
-// Get messages from buffer
-const messages = kickWS.getMessageBuffer();
-console.log(`Buffer has ${messages.length} messages`);
-
-// Clear buffer
-kickWS.clearMessageBuffer();
+// Filter events using enum values
+kickWS = new KickWebSocket({
+  filteredEvents: [
+    KickEvent.ChatMessage,
+    KickEvent.UserBanned,
+    KickEvent.Subscription
+  ]
+});
 ```
 
 ## Convenience Methods
@@ -210,6 +178,30 @@ kickWS.clearMessageBuffer();
 
 ```typescript
 const kickWS = KickWebSocket.createDebug('channel-name');
+```
+
+### Event Category Methods
+
+```typescript
+// Listen to all chat events
+kickWS.onChatEvents((event) => {
+  console.log('Chat event:', event);
+});
+
+// Listen to all user events
+kickWS.onUserEvents((event) => {
+  console.log('User event:', event);
+});
+
+// Listen to all stream events
+kickWS.onStreamEvents((event) => {
+  console.log('Stream event:', event);
+});
+
+// Listen to all events
+kickWS.onAllEvents((event) => {
+  console.log('Any event:', event);
+});
 ```
 
 ## Available Events
@@ -224,6 +216,7 @@ const kickWS = KickWebSocket.createDebug('channel-name');
 - `UserUnbanned`: Unbanned users
 - `Subscription`: New subscriptions
 - `GiftedSubscriptions`: Gifted subscriptions
+- `KicksGifted`: Kicks gifts sent by users
 
 ### Stream Events
 - `StreamHost`: When a channel hosts another
@@ -258,6 +251,30 @@ interface ChatMessageEvent {
   chatroom: {
     id: number;
   };
+}
+```
+
+### Kicks Gifted Event
+
+```typescript
+interface KicksGiftedEvent {
+  gift_transaction_id: string;
+  message: string;
+  sender: {
+    id: number;
+    username: string;
+    username_color: string;
+  };
+  gift: {
+    gift_id: string;
+    name: string;
+    amount: number;
+    type: string;
+    tier: string;
+    character_limit: number;
+    pinned_time: number;
+  };
+  type: "kicks_gifted";
 }
 ```
 
@@ -301,15 +318,15 @@ channels.forEach(channel => {
 ### Real-time Activity Analyzer
 
 ```typescript
+import { KickEvent } from 'kick-wss';
+
 const kickWS = new KickWebSocket({
   debug: true,
-  enableBuffer: true,
-  bufferSize: 2000,
   filteredEvents: [
-    'ChatMessage',
-    'UserBanned', 
-    'Subscription',
-    'GiftedSubscriptions'
+    KickEvent.ChatMessage,
+    KickEvent.UserBanned,
+    KickEvent.Subscription,
+    KickEvent.GiftedSubscriptions
   ]
 });
 
@@ -319,9 +336,9 @@ let messageCount = 0;
 let subscriberCount = 0;
 let banCount = 0;
 
-kickWS.onChatMessage(() => messageCount++);
-kickWS.onSubscription(() => subscriberCount++);
-kickWS.onUserBanned(() => banCount++);
+kickWS.on(KickEvent.ChatMessage, () => messageCount++);
+kickWS.on(KickEvent.Subscription, () => subscriberCount++);
+kickWS.on(KickEvent.UserBanned, () => banCount++);
 
 // Report every minute
 setInterval(() => {
@@ -382,10 +399,23 @@ function sendNotification(message: string) {
 
 - `getChannelName(): string` - Current channel name
 - `getChannelId(): number` - Current channel ID
-- `getMessageBuffer(): string[]` - Get message buffer
-- `clearMessageBuffer(): void` - Clear buffer
-- `getStats(): object` - Get statistics
+- `getConnectionState(): ConnectionState` - Get connection state
+- `isConnected(): boolean` - Check if connected
 - `updateOptions(options): void` - Update configuration
+
+### WebSocket Configuration Methods
+
+- `setWebSocketConfig(config): void` - Set WebSocket URL and parameters
+- `getWebSocketConfig(): WebSocketConfig` - Get current WebSocket configuration
+- `resetWebSocketConfig(): void` - Reset to default configuration
+
+### Subscription Management Methods
+
+- `subscribeToChannel(channel): void` - Subscribe to additional channel
+- `unsubscribeFromChannel(channel): void` - Unsubscribe from channel
+- `addCustomSubscriptions(channels): void` - Add custom subscription channels
+- `clearCustomSubscriptions(): void` - Clear all custom subscriptions
+- `getCustomSubscriptions(): object` - Get current custom subscriptions
 
 ## Limitations
 

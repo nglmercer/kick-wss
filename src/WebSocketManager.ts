@@ -12,20 +12,7 @@ import type {
   WebSocketConfig,
 } from "./types.js";
 
-// Enum para eventos de Kick
-export enum KickEvent {
-  ChatMessage = "App\\Events\\ChatMessageEvent",
-  MessageDeleted = "App\\Events\\MessageDeletedEvent",
-  UserBanned = "App\\Events\\UserBannedEvent",
-  UserUnbanned = "App\\Events\\UserUnbannedEvent",
-  Subscription = "App\\Events\\SubscriptionEvent",
-  GiftedSubscriptions = "App\\Events\\GiftedSubscriptionsEvent",
-  PinnedMessageCreated = "App\\Events\\PinnedMessageCreatedEvent",
-  StreamHost = "App\\Events\\StreamHostEvent",
-  PollUpdate = "App\\Events\\PollUpdateEvent",
-  PollDelete = "App\\Events\\PollDeleteEvent",
-  KicksGifted = "KicksGifted",
-}
+import { KickEvent, LEGACY_EVENT_MAPPING } from "./types.js";
 
 // Mapeo de eventos de Kick a tipos estándar
 const EVENT_TYPE_MAP: Record<string, keyof EventDataMap> = {
@@ -470,7 +457,9 @@ export class WebSocketManager extends EventEmitter {
       return false;
     }
 
-    const standardEventType = EVENT_TYPE_MAP[eventType];
+    // Verificar compatibilidad con nombres antiguos
+    const normalizedEventType = LEGACY_EVENT_MAPPING[eventType] || eventType;
+    const standardEventType = EVENT_TYPE_MAP[normalizedEventType];
     return standardEventType
       ? !this.options.filteredEvents.includes(standardEventType)
       : false;
