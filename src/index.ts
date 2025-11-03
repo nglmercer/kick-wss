@@ -31,7 +31,7 @@ export type {
 // Clase principal simplificada para uso fácil
 import { WebSocketManager } from "./WebSocketManager.js";
 import type {
-  KickWebSocketOptions,
+  ExtendedKickWebSocketOptions,
   KickEventType,
   EventHandler,
 } from "./types.js";
@@ -57,7 +57,7 @@ import type {
  * ```
  */
 export class KickWebSocket extends WebSocketManager {
-  constructor(options: KickWebSocketOptions = {}) {
+  constructor(options: ExtendedKickWebSocketOptions = {}) {
     super(options);
   }
 
@@ -141,8 +141,6 @@ export class KickWebSocket extends WebSocketManager {
       debug: true,
       autoReconnect: true,
       reconnectInterval: 3000,
-      enableBuffer: true,
-      bufferSize: 500,
     });
 
     if (channelName) {

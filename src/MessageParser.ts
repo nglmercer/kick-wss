@@ -25,6 +25,19 @@ import type {
   RawPollDeleteData,
 } from "./types.js";
 
+export enum KickEvent {
+  ChatMessage = "App\\Events\\ChatMessageEvent",
+  MessageDeleted = "App\\Events\\MessageDeletedEvent",
+  UserBanned = "App\\Events\\UserBannedEvent",
+  UserUnbanned = "App\\Events\\UserUnbannedEvent",
+  Subscription = "App\\Events\\SubscriptionEvent",
+  GiftedSubscriptions = "App\\Events\\GiftedSubscriptionsEvent",
+  PinnedMessageCreated = "App\\Events\\PinnedMessageCreatedEvent",
+  StreamHost = "App\\Events\\StreamHostEvent",
+  PollUpdate = "App\\Events\\PollUpdateEvent",
+  PollDelete = "App\\Events\\PollDeleteEvent",
+}
+
 export class MessageParser {
   /**
    * Parsea un mensaje raw del WebSocket y devuelve el evento procesado
@@ -33,14 +46,12 @@ export class MessageParser {
     rawMessage: string,
   ): { type: KickEventType; data: KickEventData } | null {
     try {
-      // Validar que el mensaje no esté vacío
       if (!rawMessage || rawMessage.trim() === "") {
         return null;
       }
 
       const message: WebSocketMessage = JSON.parse(rawMessage);
 
-      // Validar que el mensaje tenga las propiedades necesarias
       if (!message.event || message.data === undefined) {
         return null;
       }
@@ -53,7 +64,6 @@ export class MessageParser {
         return null;
       }
 
-      // Ignorar eventos vacíos
       if (message.event === "" || message.data === "") {
         return null;
       }
@@ -61,7 +71,6 @@ export class MessageParser {
       // Parsear los datos del evento
       let eventData: unknown;
       try {
-        // Validar que los datos no sean undefined o vacíos antes de parsear
         if (message.data === undefined || message.data === "") {
           return null;
         }
@@ -71,39 +80,39 @@ export class MessageParser {
         return null;
       }
 
-      // Mapear eventos de Kick.com a tipos estándar
+      // Mapear eventos usando el enum
       switch (message.event) {
-        case "App\\Events\\ChatMessageEvent":
+        case KickEvent.ChatMessage:
           return {
             type: "ChatMessage",
             data: this.parseChatMessage(eventData as RawChatMessageData),
           };
 
-        case "App\\Events\\MessageDeletedEvent":
+        case KickEvent.MessageDeleted:
           return {
             type: "MessageDeleted",
             data: this.parseMessageDeleted(eventData as RawMessageDeletedData),
           };
 
-        case "App\\Events\\UserBannedEvent":
+        case KickEvent.UserBanned:
           return {
             type: "UserBanned",
             data: this.parseUserBanned(eventData as RawUserBannedData),
           };
 
-        case "App\\Events\\UserUnbannedEvent":
+        case KickEvent.UserUnbanned:
           return {
             type: "UserUnbanned",
             data: this.parseUserUnbanned(eventData as RawUserUnbannedData),
           };
 
-        case "App\\Events\\SubscriptionEvent":
+        case KickEvent.Subscription:
           return {
             type: "Subscription",
             data: this.parseSubscription(eventData as RawSubscriptionData),
           };
 
-        case "App\\Events\\GiftedSubscriptionsEvent":
+        case KickEvent.GiftedSubscriptions:
           return {
             type: "GiftedSubscriptions",
             data: this.parseGiftedSubscriptions(
@@ -111,7 +120,7 @@ export class MessageParser {
             ),
           };
 
-        case "App\\Events\\PinnedMessageCreatedEvent":
+        case KickEvent.PinnedMessageCreated:
           return {
             type: "PinnedMessageCreated",
             data: this.parsePinnedMessageCreated(
@@ -119,26 +128,25 @@ export class MessageParser {
             ),
           };
 
-        case "App\\Events\\StreamHostEvent":
+        case KickEvent.StreamHost:
           return {
             type: "StreamHost",
             data: this.parseStreamHost(eventData as RawStreamHostData),
           };
 
-        case "App\\Events\\PollUpdateEvent":
+        case KickEvent.PollUpdate:
           return {
             type: "PollUpdate",
             data: this.parsePollUpdate(eventData as RawPollUpdateData),
           };
 
-        case "App\\Events\\PollDeleteEvent":
+        case KickEvent.PollDelete:
           return {
             type: "PollDelete",
             data: this.parsePollDelete(eventData as RawPollDeleteData),
           };
 
         default:
-          // No mostrar warning para eventos de sistema de Pusher
           if (
             !message.event?.startsWith("pusher:") &&
             !message.event?.startsWith("pusher_internal:")
@@ -312,8 +320,6 @@ export class MessageParser {
    */
   private static cleanEmotes(content: string): string {
     if (!content) return "";
-
-    // Reemplazar códigos de emote como [emote:123:emoteName] con el nombre del emote
     return content.replace(/\[emote:(\d+):(\w+)\]/g, "$2");
   }
 
@@ -322,7 +328,6 @@ export class MessageParser {
    */
   static isValidMessage(message: string): boolean {
     try {
-      // Validar que el mensaje no esté vacío
       if (!message || message.trim() === "") {
         return false;
       }
@@ -344,19 +349,16 @@ export class MessageParser {
    */
   static extractEventType(rawMessage: string): string | null {
     try {
-      // Validar que el mensaje no esté vacío
       if (!rawMessage || rawMessage.trim() === "") {
         return null;
       }
 
       const message = JSON.parse(rawMessage) as WebSocketMessage;
 
-      // Validar que el evento exista
       if (!message.event) {
         return null;
       }
 
-      // Ignorar eventos de sistema de Pusher
       if (
         message.event.startsWith("pusher:") ||
         message.event.startsWith("pusher_internal:")
@@ -364,7 +366,6 @@ export class MessageParser {
         return null;
       }
 
-      // Ignorar eventos vacíos
       if (message.event === "") {
         return null;
       }

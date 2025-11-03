@@ -2,23 +2,44 @@
 import { EventEmitter } from "./EventEmitter.js";
 import { MessageParser } from "./MessageParser.js";
 import type {
-  KickEventType,
   KickWebSocketOptions,
   ConnectionState,
   EventHandler,
   KickChannel,
-  ChatMessageEvent,
-  MessageDeletedEvent,
-  UserBannedEvent,
-  UserUnbannedEvent,
-  SubscriptionEvent,
-  GiftedSubscriptionsEvent,
-  PinnedMessageCreatedEvent,
-  StreamHostEvent,
-  PollUpdateEvent,
-  PollDeleteEvent,
   EventDataMap,
+  ExtendedKickWebSocketOptions,
+  SubscriptionMessage,
+  WebSocketConfig,
 } from "./types.js";
+
+// Enum para eventos de Kick
+export enum KickEvent {
+  ChatMessage = "App\\Events\\ChatMessageEvent",
+  MessageDeleted = "App\\Events\\MessageDeletedEvent",
+  UserBanned = "App\\Events\\UserBannedEvent",
+  UserUnbanned = "App\\Events\\UserUnbannedEvent",
+  Subscription = "App\\Events\\SubscriptionEvent",
+  GiftedSubscriptions = "App\\Events\\GiftedSubscriptionsEvent",
+  PinnedMessageCreated = "App\\Events\\PinnedMessageCreatedEvent",
+  StreamHost = "App\\Events\\StreamHostEvent",
+  PollUpdate = "App\\Events\\PollUpdateEvent",
+  PollDelete = "App\\Events\\PollDeleteEvent",
+}
+
+// Mapeo de eventos de Kick a tipos estándar
+const EVENT_TYPE_MAP: Record<string, keyof EventDataMap> = {
+  [KickEvent.ChatMessage]: "ChatMessage",
+  [KickEvent.MessageDeleted]: "MessageDeleted",
+  [KickEvent.UserBanned]: "UserBanned",
+  [KickEvent.UserUnbanned]: "UserUnbanned",
+  [KickEvent.Subscription]: "Subscription",
+  [KickEvent.GiftedSubscriptions]: "GiftedSubscriptions",
+  [KickEvent.PinnedMessageCreated]: "PinnedMessageCreated",
+  [KickEvent.StreamHost]: "StreamHost",
+  [KickEvent.PollUpdate]: "PollUpdate",
+  [KickEvent.PollDelete]: "PollDelete",
+};
+
 
 export class WebSocketManager extends EventEmitter {
   private ws: WebSocket | null = null;
@@ -27,42 +48,63 @@ export class WebSocketManager extends EventEmitter {
   private connectionState: ConnectionState = "disconnected";
   private options: Required<KickWebSocketOptions>;
   private reconnectTimer: number | null = null;
-  private messageBuffer: string[] = [];
   private isManualDisconnect: boolean = false;
+  private connectionResolver: ((value: void) => void) | null = null;
+  private connectionRejector: ((error: Error) => void) | null = null;
 
-  // URL del WebSocket de Kick.com
-  private readonly WEBSOCKET_URL =
+  // URLs y parámetros configurables
+  private websocketUrl: string;
+  private websocketParams: Record<string, string>;
+
+  // Suscripciones personalizadas
+  private customSubscriptions: string[] = [];
+  private subscriptionMessages: SubscriptionMessage[] = [];
+
+  // Valores por defecto
+  private readonly DEFAULT_WEBSOCKET_URL =
     "wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679";
-  private readonly WS_PARAMS = {
+  private readonly DEFAULT_WS_PARAMS = {
     protocol: "7",
     client: "js",
     version: "8.4.0",
     flash: "false",
   };
 
-  // Custom WebSocket URL and params (si se necesita personalizar)
-  private customWebSocketUrl?: string;
-  private customWebSocketParams?: Record<string, string>;
-
-  constructor(options: KickWebSocketOptions = {}) {
+  constructor(options: ExtendedKickWebSocketOptions = {}) {
     super();
 
-    // Opciones por defecto
+    // Configurar opciones básicas
     this.options = {
       debug: false,
       autoReconnect: true,
       reconnectInterval: 5000,
-      enableBuffer: false,
-      bufferSize: 1000,
+      connectionTimeout: 10000,
       filteredEvents: [],
       ...options,
     };
 
-    this.log("WebSocketManager initialized with options:", this.options);
+    // Configurar WebSocket URL y parámetros
+    this.websocketUrl = options.websocketConfig?.url || this.DEFAULT_WEBSOCKET_URL;
+    this.websocketParams = {
+      ...this.DEFAULT_WS_PARAMS,
+      ...options.websocketConfig?.params,
+    };
+
+    // Configurar suscripciones personalizadas
+    this.customSubscriptions = options.customSubscriptions || [];
+    this.subscriptionMessages = options.subscriptionMessages || [];
+
+    this.log("WebSocketManager initialized with config:", {
+      url: this.websocketUrl,
+      params: this.websocketParams,
+      customSubscriptions: this.customSubscriptions,
+      subscriptionMessages: this.subscriptionMessages,
+    });
   }
 
   /**
    * Conecta al WebSocket de un canal específico
+   * Retorna una promesa que se resuelve cuando la conexión está lista
    */
   async connect(channelName: string): Promise<void> {
     if (
@@ -76,12 +118,31 @@ export class WebSocketManager extends EventEmitter {
     this.channelName = channelName;
     this.isManualDisconnect = false;
 
-    try {
-      await this.performConnection();
-    } catch (error) {
-      this.handleConnectionError(error as Error);
-      throw error;
-    }
+    return new Promise<void>((resolve, reject) => {
+      this.connectionResolver = resolve;
+      this.connectionRejector = reject;
+
+      // Timeout para evitar que la promesa nunca se resuelva
+      const timeout = setTimeout(() => {
+        if (this.connectionState !== "connected") {
+          const error = new Error(
+            `Connection timeout after ${this.options.connectionTimeout}ms`
+          );
+          this.handleConnectionError(error);
+          reject(error);
+        }
+      }, this.options.connectionTimeout);
+
+      // Limpiar timeout cuando se conecte
+      const cleanupTimeout = () => clearTimeout(timeout);
+      this.once("ready", cleanupTimeout);
+      this.once("error", cleanupTimeout);
+
+      this.performConnection().catch((error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+    });
   }
 
   /**
@@ -91,55 +152,103 @@ export class WebSocketManager extends EventEmitter {
     this.setConnectionState("connecting");
     this.log(`Connecting to channel: ${this.channelName}`);
 
-    // Obtener información del canal
-    const channelInfo = await this.getChannelInfo(this.channelName);
-    this.channelId = channelInfo.chatroom.id;
+    try {
+      // Obtener información del canal
+      const channelInfo = await this.getChannelInfo(this.channelName);
+      this.channelId = channelInfo.chatroom.id;
 
-    // Construir URL del WebSocket
-    const wsUrl = this.buildWebSocketUrl();
+      // Construir URL del WebSocket
+      const wsUrl = this.buildWebSocketUrl();
 
-    // Crear conexión WebSocket
-    this.ws = new WebSocket(wsUrl);
+      // Crear conexión WebSocket
+      this.ws = new WebSocket(wsUrl);
 
-    // Configurar manejadores de eventos
-    this.setupWebSocketHandlers();
+      // Configurar manejadores de eventos
+      this.setupWebSocketHandlers();
+    } catch (error) {
+      this.handleConnectionError(error as Error);
+      throw error;
+    }
   }
 
   /**
    * Construye la URL del WebSocket con parámetros
    */
   private buildWebSocketUrl(): string {
-    const baseUrl = this.customWebSocketUrl || this.WEBSOCKET_URL;
-    const params = new URLSearchParams({
-      ...this.WS_PARAMS,
-      ...this.customWebSocketParams,
-    });
-    return `${baseUrl}?${params.toString()}`;
+    const params = new URLSearchParams(this.websocketParams);
+    return `${this.websocketUrl}?${params.toString()}`;
   }
 
   /**
-   * Establece una URL personalizada para el WebSocket
+   * Actualiza la configuración del WebSocket (URL y parámetros)
    */
-  setWebSocketUrl(url: string): void {
-    this.customWebSocketUrl = url;
-    this.log(`Custom WebSocket URL set: ${url}`);
+  setWebSocketConfig(config: WebSocketConfig): void {
+    if (config.url) {
+      this.websocketUrl = config.url;
+      this.log(`WebSocket URL updated: ${config.url}`);
+    }
+
+    if (config.params) {
+      this.websocketParams = { ...this.websocketParams, ...config.params };
+      this.log(`WebSocket params updated:`, this.websocketParams);
+    }
   }
 
   /**
-   * Establece parámetros personalizados para el WebSocket
+   * Obtiene la configuración actual del WebSocket
    */
-  setWebSocketParams(params: Record<string, string>): void {
-    this.customWebSocketParams = { ...this.customWebSocketParams, ...params };
-    this.log(`Custom WebSocket params set:`, this.customWebSocketParams);
+  getWebSocketConfig(): WebSocketConfig {
+    return {
+      url: this.websocketUrl,
+      params: { ...this.websocketParams },
+    };
   }
 
   /**
-   * Restablece la URL y parámetros del WebSocket a los valores por defecto
+   * Restablece la configuración del WebSocket a los valores por defecto
    */
   resetWebSocketConfig(): void {
-    this.customWebSocketUrl = undefined;
-    this.customWebSocketParams = undefined;
+    this.websocketUrl = this.DEFAULT_WEBSOCKET_URL;
+    this.websocketParams = { ...this.DEFAULT_WS_PARAMS };
     this.log("WebSocket configuration reset to defaults");
+  }
+
+  /**
+   * Añade canales de suscripción personalizados
+   */
+  addCustomSubscriptions(channels: string[]): void {
+    this.customSubscriptions.push(...channels);
+    this.log(`Custom subscriptions added:`, channels);
+  }
+
+  /**
+   * Añade mensajes de suscripción completamente personalizados
+   */
+  addSubscriptionMessages(messages: SubscriptionMessage[]): void {
+    this.subscriptionMessages.push(...messages);
+    this.log(`Subscription messages added:`, messages);
+  }
+
+  /**
+   * Limpia todas las suscripciones personalizadas
+   */
+  clearCustomSubscriptions(): void {
+    this.customSubscriptions = [];
+    this.subscriptionMessages = [];
+    this.log("Custom subscriptions cleared");
+  }
+
+  /**
+   * Obtiene las suscripciones personalizadas actuales
+   */
+  getCustomSubscriptions(): {
+    channels: string[];
+    messages: SubscriptionMessage[];
+  } {
+    return {
+      channels: [...this.customSubscriptions],
+      messages: [...this.subscriptionMessages],
+    };
   }
 
   /**
@@ -150,7 +259,7 @@ export class WebSocketManager extends EventEmitter {
 
     this.ws.onopen = () => {
       this.log("WebSocket connection opened");
-      this.subscribeToChannel();
+      this.subscribeToChannels();
     };
 
     this.ws.onmessage = (event) => {
@@ -165,28 +274,151 @@ export class WebSocketManager extends EventEmitter {
     this.ws.onerror = (error) => {
       this.log("WebSocket error:", error);
       this.emit("error", error);
+      this.connectionRejector?.(new Error("WebSocket error"));
     };
   }
 
   /**
-   * Se suscribe al canal del chat
+   * Se suscribe a todos los canales (principal + personalizados)
    */
-  private subscribeToChannel(): void {
+  private subscribeToChannels(): void {
     if (!this.ws) return;
+
+    // Crear un Set para trackear canales ya suscritos
+    const subscribedChannels = new Set<string>();
+    /*
+    {"event":"pusher:subscribe","data":{"auth":"","channel":"chatroom_56235532"}}
+    {"event":"pusher:subscribe","data":{"auth":"","channel":"chatrooms.56235532.v2"}}
+    {"event":"pusher:subscribe","data":{"auth":"","channel":"channel_56523912"}}
+    {"event":"pusher:subscribe","data":{"auth":"","channel":"chatrooms.56235532"}}
+    {"event":"pusher:subscribe","data":{"auth":"","channel":"channel.56523912"}}
+    {"event":"pusher:subscribe","data":{"auth":"","channel":"predictions-channel-56523912"}}
+
+    */
+    this.customSubscriptions.push(`chatroom_${this.channelId}`);
+    this.customSubscriptions.push(`chatrooms.${this.channelId}.v2`);
+    this.customSubscriptions.push(`channel_${this.channelId}`);
+    this.customSubscriptions.push(`chatrooms.${this.channelId}`);
+    this.customSubscriptions.push(`channel.${this.channelId}`);
+    this.customSubscriptions.push(`predictions-channel-${this.channelId}`);
+
+    // Suscripciones a canales personalizados (evitando duplicados)
+    for (const channel of this.customSubscriptions) {
+      if (!subscribedChannels.has(channel)) {
+        const subscribeMessage = {
+          event: "pusher:subscribe",
+          data: {
+            auth: "",
+            channel: channel,
+          },
+        };
+        this.sendSubscription(subscribeMessage);
+        subscribedChannels.add(channel);
+        this.log(`Subscribed to custom channel: ${channel}`);
+      } else {
+        this.log(`Skipping duplicate subscription: ${channel}`);
+      }
+    }
+
+    // Enviar mensajes de suscripción completamente personalizados (evitando duplicados)
+    for (const message of this.subscriptionMessages) {
+      const channel = message.data?.channel;
+      if (channel && !subscribedChannels.has(channel)) {
+        this.sendSubscription(message);
+        subscribedChannels.add(channel);
+        this.log(`Sent custom subscription message:`, message);
+      } else {
+        this.log(`Skipping duplicate subscription message for channel: ${channel}`);
+      }
+    }
+
+    // Marcar como conectado después de todas las suscripciones
+    this.setConnectionState("connected");
+    this.emit("ready", { 
+      channel: this.channelName,
+      customSubscriptions: Array.from(subscribedChannels),
+    });
+
+    // Resolver la promesa de conexión
+    this.connectionResolver?.();
+    this.connectionResolver = null;
+    this.connectionRejector = null;
+  }
+
+  /**
+   * Envía un mensaje de suscripción al WebSocket
+   */
+  private sendSubscription(message: SubscriptionMessage): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      this.log("Cannot send subscription: WebSocket not open");
+      return;
+    }
+
+    try {
+      this.ws.send(JSON.stringify(message));
+      this.emit("subscriptionSent", message);
+    } catch (error) {
+      this.log("Error sending subscription:", error);
+      this.emit("subscriptionError", { message, error });
+    }
+  }
+
+  /**
+   * Suscribe a un canal adicional después de la conexión inicial
+   */
+  subscribeToChannel(channel: string): void {
+    if (!this.isConnected()) {
+      this.log("Cannot subscribe: not connected");
+      return;
+    }
 
     const subscribeMessage = {
       event: "pusher:subscribe",
       data: {
         auth: "",
-        channel: `chatrooms.${this.channelId}.v2`,
+        channel: channel,
       },
     };
 
-    this.ws.send(JSON.stringify(subscribeMessage));
-    this.log(`Subscribed to channel: chatrooms.${this.channelId}.v2`);
+    this.sendSubscription(subscribeMessage);
+    this.log(`Dynamically subscribed to channel: ${channel}`);
+  }
 
-    this.setConnectionState("connected");
-    this.emit("ready", { channel: this.channelName });
+  /**
+   * Desuscribe de un canal
+   */
+  unsubscribeFromChannel(channel: string): void {
+    if (!this.isConnected()) {
+      this.log("Cannot unsubscribe: not connected");
+      return;
+    }
+
+    const unsubscribeMessage = {
+      event: "pusher:unsubscribe",
+      data: {
+        channel: channel,
+      },
+    };
+
+    if (this.ws) {
+      this.ws.send(JSON.stringify(unsubscribeMessage));
+      this.log(`Unsubscribed from channel: ${channel}`);
+    }
+  }
+
+  sendPing(): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      this.log("Cannot send ping: WebSocket not open");
+      return;
+    }
+
+    try {
+      this.ws.send(JSON.stringify({ event: "pusher:ping", data: "{}" }));
+      this.emit("pingSent");
+    } catch (error) {
+      this.log("Error sending ping:", error);
+      this.emit("pingError", error);
+    }
   }
 
   /**
@@ -195,12 +427,7 @@ export class WebSocketManager extends EventEmitter {
   private handleMessage(rawMessage: string): void {
     // Emitir mensaje raw primero
     this.emit("rawMessage", rawMessage);
-
-    // Agregar al buffer si está habilitado
-    if (this.options.enableBuffer) {
-      this.addToBuffer(rawMessage);
-    }
-
+    
     // Filtrar eventos de sistema de Pusher temprano
     try {
       const message = JSON.parse(rawMessage);
@@ -208,6 +435,9 @@ export class WebSocketManager extends EventEmitter {
         message.event?.startsWith("pusher:") ||
         message.event?.startsWith("pusher_internal:")
       ) {
+        if (message.event === "pusher:pong"){
+          this.sendPing();
+        }
         this.log(`Ignoring Pusher system event: ${message.event}`);
         return;
       }
@@ -231,85 +461,6 @@ export class WebSocketManager extends EventEmitter {
   }
 
   /**
-   * Exporta el buffer de mensajes raw
-   */
-  exportRawMessages(): string[] {
-    return [...this.messageBuffer];
-  }
-
-  /**
-   * Exporta un rango de mensajes raw del buffer
-   */
-  exportRawMessagesInRange(startIndex: number, endIndex?: number): string[] {
-    const buffer = [...this.messageBuffer];
-    return endIndex
-      ? buffer.slice(startIndex, endIndex)
-      : buffer.slice(startIndex);
-  }
-
-  /**
-   * Exporta mensajes raw filtrados por tipo de evento
-   */
-  exportRawMessagesByEventType(eventType: KickEventType): string[] {
-    return this.messageBuffer.filter((message) => {
-      const parsed = MessageParser.parseMessage(message);
-      return parsed && parsed.type === eventType;
-    });
-  }
-
-  /**
-   * Limpia mensajes raw del buffer por tipo de evento
-   */
-  clearRawMessagesByEventType(eventType: KickEventType): void {
-    this.messageBuffer = this.messageBuffer.filter((message) => {
-      const parsed = MessageParser.parseMessage(message);
-      return !(parsed && parsed.type === eventType);
-    });
-  }
-
-  /**
-   * Obtiene estadísticas del buffer de mensajes raw
-   */
-  getRawMessageStats(): {
-    total: number;
-    byType: Record<string, number>;
-    oldestTimestamp?: Date;
-    newestTimestamp?: Date;
-  } {
-    const stats = {
-      total: this.messageBuffer.length,
-      byType: {} as Record<string, number>,
-      oldestTimestamp: undefined as Date | undefined,
-      newestTimestamp: undefined as Date | undefined,
-    };
-
-    this.messageBuffer.forEach((message) => {
-      try {
-        const parsed = MessageParser.parseMessage(message);
-        if (parsed) {
-          stats.byType[parsed.type] = (stats.byType[parsed.type] || 0) + 1;
-        }
-      } catch (e) {
-        // Ignorar errores al parsear para estadísticas
-      }
-    });
-
-    return stats;
-  }
-
-  /**
-   * Agrega un mensaje al buffer
-   */
-  private addToBuffer(message: string): void {
-    this.messageBuffer.push(message);
-
-    // Mantener el tamaño del buffer
-    if (this.messageBuffer.length > this.options.bufferSize) {
-      this.messageBuffer.shift();
-    }
-  }
-
-  /**
    * Verifica si un evento está filtrado
    */
   private isEventFiltered(eventType: string): boolean {
@@ -317,21 +468,7 @@ export class WebSocketManager extends EventEmitter {
       return false;
     }
 
-    // Mapear eventos de Kick.com a tipos estándar
-    const eventTypeMap: { [key: string]: KickEventType } = {
-      "App\\Events\\ChatMessageEvent": "ChatMessage",
-      "App\\Events\\MessageDeletedEvent": "MessageDeleted",
-      "App\\Events\\UserBannedEvent": "UserBanned",
-      "App\\Events\\UserUnbannedEvent": "UserUnbanned",
-      "App\\Events\\SubscriptionEvent": "Subscription",
-      "App\\Events\\GiftedSubscriptionsEvent": "GiftedSubscriptions",
-      "App\\Events\\PinnedMessageCreatedEvent": "PinnedMessageCreated",
-      "App\\Events\\StreamHostEvent": "StreamHost",
-      "App\\Events\\PollUpdateEvent": "PollUpdate",
-      "App\\Events\\PollDeleteEvent": "PollDelete",
-    };
-
-    const standardEventType = eventTypeMap[eventType];
+    const standardEventType = EVENT_TYPE_MAP[eventType];
     return standardEventType
       ? !this.options.filteredEvents.includes(standardEventType)
       : false;
@@ -343,6 +480,13 @@ export class WebSocketManager extends EventEmitter {
   private handleDisconnect(code: number, reason: string): void {
     this.setConnectionState("disconnected");
     this.emit("disconnect", { code, reason });
+
+    // Rechazar promesa de conexión si existe
+    this.connectionRejector?.(
+      new Error(`Disconnected: ${code} - ${reason}`)
+    );
+    this.connectionResolver = null;
+    this.connectionRejector = null;
 
     // Reconexión automática si no es desconexión manual
     if (this.options.autoReconnect && !this.isManualDisconnect) {
@@ -356,6 +500,11 @@ export class WebSocketManager extends EventEmitter {
   private handleConnectionError(error: Error): void {
     this.setConnectionState("error");
     this.emit("error", error);
+
+    // Rechazar promesa de conexión si existe
+    this.connectionRejector?.(error);
+    this.connectionResolver = null;
+    this.connectionRejector = null;
 
     if (this.options.autoReconnect && !this.isManualDisconnect) {
       this.scheduleReconnect();
@@ -404,7 +553,7 @@ export class WebSocketManager extends EventEmitter {
   /**
    * Obtiene información del canal
    */
-  private async getChannelInfo(channelName: string): Promise<KickChannel> {
+  public async getChannelInfo(channelName: string): Promise<KickChannel> {
     const url = `https://kick.com/api/v2/channels/${channelName}`;
 
     try {
@@ -471,107 +620,7 @@ export class WebSocketManager extends EventEmitter {
     super.off(event, handler as EventHandler<unknown>);
   }
 
-  /**
-   * Helper method: Escucha mensajes de chat
-   */
-  onChatMessage(handler: EventHandler<ChatMessageEvent>): void {
-    this.on("ChatMessage", handler);
-  }
-
-  /**
-   * Helper method: Escucha mensajes eliminados
-   */
-  onMessageDeleted(handler: EventHandler<MessageDeletedEvent>): void {
-    this.on("MessageDeleted", handler);
-  }
-
-  /**
-   * Helper method: Escucha usuarios baneados
-   */
-  onUserBanned(handler: EventHandler<UserBannedEvent>): void {
-    this.on("UserBanned", handler);
-  }
-
-  /**
-   * Helper method: Escucha usuarios desbaneados
-   */
-  onUserUnbanned(handler: EventHandler<UserUnbannedEvent>): void {
-    this.on("UserUnbanned", handler);
-  }
-
-  /**
-   * Helper method: Escucha suscripciones
-   */
-  onSubscription(handler: EventHandler<SubscriptionEvent>): void {
-    this.on("Subscription", handler);
-  }
-
-  /**
-   * Helper method: Escucha suscripciones regaladas
-   */
-  onGiftedSubscriptions(handler: EventHandler<GiftedSubscriptionsEvent>): void {
-    this.on("GiftedSubscriptions", handler);
-  }
-
-  /**
-   * Helper method: Escucha mensajes fijados
-   */
-  onPinnedMessageCreated(
-    handler: EventHandler<PinnedMessageCreatedEvent>,
-  ): void {
-    this.on("PinnedMessageCreated", handler);
-  }
-
-  /**
-   * Helper method: Escucha eventos de host
-   */
-  onStreamHost(handler: EventHandler<StreamHostEvent>): void {
-    this.on("StreamHost", handler);
-  }
-
-  /**
-   * Helper method: Escucha actualizaciones de encuestas
-   */
-  onPollUpdate(handler: EventHandler<PollUpdateEvent>): void {
-    this.on("PollUpdate", handler);
-  }
-
-  /**
-   * Helper method: Escucha eliminación de encuestas
-   */
-  onPollDelete(handler: EventHandler<PollDeleteEvent>): void {
-    this.on("PollDelete", handler);
-  }
-
-  /**
-   * Helper method: Escucha cuando la conexión está lista
-   */
-  onReady(handler: EventHandler<{ channel: string }>): void {
-    this.on("ready", handler);
-  }
-
-  /**
-   * Helper method: Escucha desconexiones
-   */
-  onDisconnect(
-    handler: EventHandler<{ code?: number; reason?: string }>,
-  ): void {
-    this.on("disconnect", handler);
-  }
-
-  /**
-   * Helper method: Escucha errores
-   */
-  onError(handler: EventHandler<Error>): void {
-    this.on("error", handler);
-  }
-
-  /**
-   * Helper method: Escucha mensajes raw
-   */
-  onRawMessage(handler: EventHandler<string>): void {
-    this.on("rawMessage", handler);
-  }
+  // ==================== GETTERS ====================
 
   /**
    * Verifica si está conectado
@@ -604,61 +653,26 @@ export class WebSocketManager extends EventEmitter {
     return this.channelId;
   }
 
-  /**
-   * Obtiene el buffer de mensajes
-   */
-  getMessageBuffer(): string[] {
-    return [...this.messageBuffer];
-  }
 
-  /**
-   * Limpia el buffer de mensajes
-   */
-  clearMessageBuffer(): void {
-    this.messageBuffer = [];
-  }
 
   /**
    * Actualiza las opciones en tiempo de ejecución
    */
-  updateOptions(newOptions: Partial<KickWebSocketOptions>): void {
+  updateOptions(newOptions: Partial<ExtendedKickWebSocketOptions>): void {
     this.options = { ...this.options, ...newOptions };
+    
+    if (newOptions.websocketConfig) {
+      this.setWebSocketConfig(newOptions.websocketConfig);
+    }
+    
+    if (newOptions.customSubscriptions) {
+      this.addCustomSubscriptions(newOptions.customSubscriptions);
+    }
+    
+    if (newOptions.subscriptionMessages) {
+      this.addSubscriptionMessages(newOptions.subscriptionMessages);
+    }
+    
     this.log("Options updated:", this.options);
-  }
-
-  /**
-   * Obtiene estadísticas de conexión
-   */
-  getStats(): {
-    connectionState: ConnectionState;
-    channelName: string;
-    channelId: number;
-    messageBufferSize: number;
-    listenerCount: number;
-    eventNames: string[];
-    rawMessageStats: {
-      total: number;
-      byType: Record<string, number>;
-      oldestTimestamp?: Date;
-      newestTimestamp?: Date;
-    };
-    customWebSocketConfig: {
-      url?: string;
-      params?: Record<string, string>;
-    };
-  } {
-    return {
-      connectionState: this.connectionState,
-      channelName: this.channelName,
-      channelId: this.channelId,
-      messageBufferSize: this.messageBuffer.length,
-      listenerCount: this.eventNames().length,
-      eventNames: this.eventNames(),
-      rawMessageStats: this.getRawMessageStats(),
-      customWebSocketConfig: {
-        url: this.customWebSocketUrl,
-        params: this.customWebSocketParams,
-      },
-    };
   }
 }

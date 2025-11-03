@@ -1,0 +1,651 @@
+{
+  "log": {
+    "version": "1.2",
+    "creator": {
+      "name": "Firefox",
+      "version": "144.0.2"
+    },
+    "browser": {
+      "name": "Firefox",
+      "version": "144.0.2"
+    },
+    "pages": [
+      {
+        "id": "page_1",
+        "pageTimings": {
+          "onContentLoad": 943,
+          "onLoad": 2406
+        },
+        "startedDateTime": "2025-11-03T15:06:27.634-05:00",
+        "title": "https://kick.com/memelcer"
+      }
+    ],
+    "entries": [
+      {
+        "startedDateTime": "2025-11-03T15:06:27.634-05:00",
+        "request": {
+          "bodySize": 0,
+          "method": "GET",
+          "url": "wss://ws-us2.pusher.com/app/32cbd69e4b950bf97679?protocol=7&client=js&version=8.4.0&flash=false",
+          "httpVersion": "HTTP/1.1",
+          "headers": [
+            {
+              "name": "Host",
+              "value": "ws-us2.pusher.com"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0"
+            },
+            {
+              "name": "Accept",
+              "value": "*/*"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "es-MX,es;q=0.8,en-US;q=0.5,en;q=0.3"
+            },
+            {
+              "name": "Accept-Encoding",
+              "value": "gzip, deflate, br, zstd"
+            },
+            {
+              "name": "Sec-WebSocket-Version",
+              "value": "13"
+            },
+            {
+              "name": "Origin",
+              "value": "https://kick.com"
+            },
+            {
+              "name": "Sec-WebSocket-Extensions",
+              "value": "permessage-deflate"
+            },
+            {
+              "name": "Sec-WebSocket-Key",
+              "value": "XhZAjisefse2VTJNFZ5/UQ=="
+            },
+            {
+              "name": "Connection",
+              "value": "keep-alive, Upgrade"
+            },
+            {
+              "name": "Sec-Fetch-Dest",
+              "value": "empty"
+            },
+            {
+              "name": "Sec-Fetch-Mode",
+              "value": "websocket"
+            },
+            {
+              "name": "Sec-Fetch-Site",
+              "value": "cross-site"
+            },
+            {
+              "name": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "Upgrade",
+              "value": "websocket"
+            }
+          ],
+          "cookies": [],
+          "queryString": [
+            {
+              "name": "protocol",
+              "value": "7"
+            },
+            {
+              "name": "client",
+              "value": "js"
+            },
+            {
+              "name": "version",
+              "value": "8.4.0"
+            },
+            {
+              "name": "flash",
+              "value": "false"
+            }
+          ],
+          "headersSize": 635
+        },
+        "response": {
+          "status": 101,
+          "statusText": "Switching Protocols",
+          "httpVersion": "HTTP/1.1",
+          "headers": [
+            {
+              "name": "Date",
+              "value": "Mon, 03 Nov 2025 20:06:29 GMT"
+            },
+            {
+              "name": "Connection",
+              "value": "upgrade"
+            },
+            {
+              "name": "Upgrade",
+              "value": "websocket"
+            },
+            {
+              "name": "Sec-WebSocket-Accept",
+              "value": "ZgRPkaG0p00mXZ0ACOMIYiHAXiY="
+            },
+            {
+              "name": "Sec-WebSocket-Extensions",
+              "value": "permessage-deflate; client_no_context_takeover; server_no_context_takeover"
+            }
+          ],
+          "cookies": [],
+          "content": {
+            "mimeType": "text/plain",
+            "size": 0,
+            "text": ""
+          },
+          "redirectURL": "",
+          "headersSize": 268,
+          "bodySize": 268
+        },
+        "cache": {},
+        "timings": {
+          "blocked": -1,
+          "dns": 407,
+          "connect": 534,
+          "ssl": 258,
+          "send": 0,
+          "wait": 131,
+          "receive": 1
+        },
+        "time": 1331,
+        "_securityState": "secure",
+        "serverIPAddress": "3.136.21.165",
+        "connection": "443",
+        "pageref": "page_1"
+      },
+      {
+        "startedDateTime": "2025-11-03T15:06:27.638-05:00",
+        "request": {
+          "bodySize": 0,
+          "method": "GET",
+          "url": "wss://ws-us3.pusher.com/app/dd11c46dae0376080879?protocol=7&client=js&version=8.4.0&flash=false",
+          "httpVersion": "HTTP/1.1",
+          "headers": [
+            {
+              "name": "Host",
+              "value": "ws-us3.pusher.com"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0"
+            },
+            {
+              "name": "Accept",
+              "value": "*/*"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "es-MX,es;q=0.8,en-US;q=0.5,en;q=0.3"
+            },
+            {
+              "name": "Accept-Encoding",
+              "value": "gzip, deflate, br, zstd"
+            },
+            {
+              "name": "Sec-WebSocket-Version",
+              "value": "13"
+            },
+            {
+              "name": "Origin",
+              "value": "https://kick.com"
+            },
+            {
+              "name": "Sec-WebSocket-Extensions",
+              "value": "permessage-deflate"
+            },
+            {
+              "name": "Sec-WebSocket-Key",
+              "value": "hkMXugQMba0y9McywCT/xg=="
+            },
+            {
+              "name": "Connection",
+              "value": "keep-alive, Upgrade"
+            },
+            {
+              "name": "Sec-Fetch-Dest",
+              "value": "empty"
+            },
+            {
+              "name": "Sec-Fetch-Mode",
+              "value": "websocket"
+            },
+            {
+              "name": "Sec-Fetch-Site",
+              "value": "cross-site"
+            },
+            {
+              "name": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "Upgrade",
+              "value": "websocket"
+            }
+          ],
+          "cookies": [],
+          "queryString": [
+            {
+              "name": "protocol",
+              "value": "7"
+            },
+            {
+              "name": "client",
+              "value": "js"
+            },
+            {
+              "name": "version",
+              "value": "8.4.0"
+            },
+            {
+              "name": "flash",
+              "value": "false"
+            }
+          ],
+          "headersSize": 635
+        },
+        "response": {
+          "status": 101,
+          "statusText": "Switching Protocols",
+          "httpVersion": "HTTP/1.1",
+          "headers": [
+            {
+              "name": "Date",
+              "value": "Mon, 03 Nov 2025 20:06:30 GMT"
+            },
+            {
+              "name": "Connection",
+              "value": "upgrade"
+            },
+            {
+              "name": "Upgrade",
+              "value": "websocket"
+            },
+            {
+              "name": "Sec-WebSocket-Accept",
+              "value": "piQETfLFFen8Q2m1ow7cArmia1Y="
+            },
+            {
+              "name": "Sec-WebSocket-Extensions",
+              "value": "permessage-deflate; client_no_context_takeover; server_no_context_takeover"
+            }
+          ],
+          "cookies": [],
+          "content": {
+            "mimeType": "text/plain",
+            "size": 0,
+            "text": ""
+          },
+          "redirectURL": "",
+          "headersSize": 268,
+          "bodySize": 268
+        },
+        "cache": {},
+        "timings": {
+          "blocked": -1,
+          "dns": 508,
+          "connect": 676,
+          "ssl": 349,
+          "send": 0,
+          "wait": 171,
+          "receive": 0
+        },
+        "time": 1704,
+        "_securityState": "secure",
+        "serverIPAddress": "54.187.200.77",
+        "connection": "443",
+        "pageref": "page_1"
+      },
+      {
+        "startedDateTime": "2025-11-03T15:06:27.653-05:00",
+        "request": {
+          "bodySize": 0,
+          "method": "GET",
+          "url": "wss://ws-mt1.pusher.com/app/73aa60a071d0943a6b3e?protocol=7&client=js&version=8.4.0&flash=false",
+          "httpVersion": "HTTP/1.1",
+          "headers": [
+            {
+              "name": "Host",
+              "value": "ws-mt1.pusher.com"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0"
+            },
+            {
+              "name": "Accept",
+              "value": "*/*"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "es-MX,es;q=0.8,en-US;q=0.5,en;q=0.3"
+            },
+            {
+              "name": "Accept-Encoding",
+              "value": "gzip, deflate, br, zstd"
+            },
+            {
+              "name": "Sec-WebSocket-Version",
+              "value": "13"
+            },
+            {
+              "name": "Origin",
+              "value": "https://kick.com"
+            },
+            {
+              "name": "Sec-WebSocket-Extensions",
+              "value": "permessage-deflate"
+            },
+            {
+              "name": "Sec-WebSocket-Key",
+              "value": "wjwW9gxoElUUsb+2/OeT0A=="
+            },
+            {
+              "name": "Connection",
+              "value": "keep-alive, Upgrade"
+            },
+            {
+              "name": "Sec-Fetch-Dest",
+              "value": "empty"
+            },
+            {
+              "name": "Sec-Fetch-Mode",
+              "value": "websocket"
+            },
+            {
+              "name": "Sec-Fetch-Site",
+              "value": "cross-site"
+            },
+            {
+              "name": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "Upgrade",
+              "value": "websocket"
+            }
+          ],
+          "cookies": [],
+          "queryString": [
+            {
+              "name": "protocol",
+              "value": "7"
+            },
+            {
+              "name": "client",
+              "value": "js"
+            },
+            {
+              "name": "version",
+              "value": "8.4.0"
+            },
+            {
+              "name": "flash",
+              "value": "false"
+            }
+          ],
+          "headersSize": 635
+        },
+        "response": {
+          "status": 101,
+          "statusText": "Switching Protocols",
+          "httpVersion": "HTTP/1.1",
+          "headers": [
+            {
+              "name": "Date",
+              "value": "Mon, 03 Nov 2025 20:06:29 GMT"
+            },
+            {
+              "name": "Connection",
+              "value": "upgrade"
+            },
+            {
+              "name": "Upgrade",
+              "value": "websocket"
+            },
+            {
+              "name": "Sec-WebSocket-Accept",
+              "value": "A07nULHjIhRVVjpRb1vau3iSSzI="
+            },
+            {
+              "name": "Sec-WebSocket-Extensions",
+              "value": "permessage-deflate; client_no_context_takeover; server_no_context_takeover"
+            }
+          ],
+          "cookies": [],
+          "content": {
+            "mimeType": "text/plain",
+            "size": 0,
+            "text": ""
+          },
+          "redirectURL": "",
+          "headersSize": 268,
+          "bodySize": 268
+        },
+        "cache": {},
+        "timings": {
+          "blocked": -1,
+          "dns": 356,
+          "connect": 472,
+          "ssl": 118,
+          "send": 0,
+          "wait": 123,
+          "receive": 0
+        },
+        "time": 1069,
+        "_securityState": "secure",
+        "serverIPAddress": "44.205.58.221",
+        "connection": "443",
+        "pageref": "page_1"
+      },
+      {
+        "startedDateTime": "2025-11-03T15:06:30.839-05:00",
+        "request": {
+          "bodySize": 0,
+          "method": "GET",
+          "url": "wss://websockets.kick.com/viewer/v1/connect?token=01K95N84CX3C3M8G5CWVRY9CAX",
+          "httpVersion": "",
+          "headers": [
+            {
+              "name": "Host",
+              "value": "websockets.kick.com"
+            },
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:144.0) Gecko/20100101 Firefox/144.0"
+            },
+            {
+              "name": "Accept",
+              "value": "*/*"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "es-MX,es;q=0.8,en-US;q=0.5,en;q=0.3"
+            },
+            {
+              "name": "Accept-Encoding",
+              "value": "gzip, deflate, br, zstd"
+            },
+            {
+              "name": "Sec-WebSocket-Version",
+              "value": "13"
+            },
+            {
+              "name": "Origin",
+              "value": "https://kick.com"
+            },
+            {
+              "name": "Sec-WebSocket-Extensions",
+              "value": "permessage-deflate"
+            },
+            {
+              "name": "Sec-WebSocket-Key",
+              "value": "AnlNqdreK38W7KmlXcFR7A=="
+            },
+            {
+              "name": "Connection",
+              "value": "keep-alive, Upgrade"
+            },
+            {
+              "name": "Cookie",
+              "value": "cf_clearance=g9SX0Zrsg_.YWC5WGGU_3Odr8KAKf.154UOw1STzuWM-1762199900-1.2.1.1-O1WjYj36fvJsKlcCbY0FLGqj6492NpPjf_SuC4c.d2S_z9msH4SEbHxf77WIBF_vH.ggEroU0YsFf6yjFvysHHh5lvzcmvJ.EVKkgUp7diJIlagQFX4RGNzVtEJpAHMiRtt7Le9bQjMKitsB8QVrTdQKCas.P4Kg7AV4MxGUKnfFvmI3Ae18LzsvjdZD0nK0Fubu5GpFsj1sY6Y0IpWwDWN38fuSP_D5pbVLGxKVwE4; cookie_preferences_set_v1=%7B%22state%22%3A%7B%22preferences%22%3A%7B%22necessary%22%3Atrue%2C%22functional%22%3Atrue%2C%22performance%22%3Atrue%2C%22targeting%22%3Atrue%2C%22userHasMadeChoice%22%3Atrue%7D%2C%22functionalEnabled%22%3Atrue%2C%22performanceEnabled%22%3Atrue%2C%22targetingEnabled%22%3Atrue%7D%2C%22version%22%3A0%7D; USER_LOCALE=es; __stripe_mid=f8faa2d6-ee5d-48a3-adc9-31e62aa8cba0554bb0; _iidt=NkNAKjJwFJPzPqZ7HFvb5n/9mByGCIw+p7KrNoK+7q04f3SK6uNRw6yuN7KmvbpqyEO6sw14QBz2U5mVMLkwOgPx3AXJBVX7Gq66khk=; session_token=262021894%7CwySIIUZqvgYeTcC7LjwjA5L8GDG0Q0g210YeSIE4; intercom-device-id-per7qesc=7d904937-80ab-4f87-89b4-b2f99d0867e7; __cf_bm=sx_UD6svZl_Ow4odWStsO0dPjqxuHj0UrNDtxDmip1M-1762199898-1.0.1.1-MhfL4UbF070ckrjYy3E6397b73xf8mteWHLnDlri3qfZ91b3A0VxycHNJwzJGmU6jb6NMUNfYLKgLFD41xkAa6awrxBgh91_ym2BplCvhmM; _cfuvid=GFuUNhyOWm9ElThVRkNFFl_BJToi2UOBvynGPeyz5xQ-1762194439188-0.0.1.1-604800000; __stripe_sid=2b2571d7-c34d-4424-9b6c-5e68b5df02f232e3be"
+            },
+            {
+              "name": "Sec-Fetch-Dest",
+              "value": "empty"
+            },
+            {
+              "name": "Sec-Fetch-Mode",
+              "value": "websocket"
+            },
+            {
+              "name": "Sec-Fetch-Site",
+              "value": "same-site"
+            },
+            {
+              "name": "Pragma",
+              "value": "no-cache"
+            },
+            {
+              "name": "Cache-Control",
+              "value": "no-cache"
+            },
+            {
+              "name": "Upgrade",
+              "value": "websocket"
+            }
+          ],
+          "cookies": [
+            {
+              "name": "cf_clearance",
+              "value": "g9SX0Zrsg_.YWC5WGGU_3Odr8KAKf.154UOw1STzuWM-1762199900-1.2.1.1-O1WjYj36fvJsKlcCbY0FLGqj6492NpPjf_SuC4c.d2S_z9msH4SEbHxf77WIBF_vH.ggEroU0YsFf6yjFvysHHh5lvzcmvJ.EVKkgUp7diJIlagQFX4RGNzVtEJpAHMiRtt7Le9bQjMKitsB8QVrTdQKCas.P4Kg7AV4MxGUKnfFvmI3Ae18LzsvjdZD0nK0Fubu5GpFsj1sY6Y0IpWwDWN38fuSP_D5pbVLGxKVwE4"
+            },
+            {
+              "name": "cookie_preferences_set_v1",
+              "value": "{\"state\":{\"preferences\":{\"necessary\":true,\"functional\":true,\"performance\":true,\"targeting\":true,\"userHasMadeChoice\":true},\"functionalEnabled\":true,\"performanceEnabled\":true,\"targetingEnabled\":true},\"version\":0}"
+            },
+            {
+              "name": "USER_LOCALE",
+              "value": "es"
+            },
+            {
+              "name": "__stripe_mid",
+              "value": "f8faa2d6-ee5d-48a3-adc9-31e62aa8cba0554bb0"
+            },
+            {
+              "name": "_iidt",
+              "value": "NkNAKjJwFJPzPqZ7HFvb5n/9mByGCIw+p7KrNoK+7q04f3SK6uNRw6yuN7KmvbpqyEO6sw14QBz2U5mVMLkwOgPx3AXJBVX7Gq66khk="
+            },
+            {
+              "name": "session_token",
+              "value": "262021894|wySIIUZqvgYeTcC7LjwjA5L8GDG0Q0g210YeSIE4"
+            },
+            {
+              "name": "intercom-device-id-per7qesc",
+              "value": "7d904937-80ab-4f87-89b4-b2f99d0867e7"
+            },
+            {
+              "name": "__cf_bm",
+              "value": "sx_UD6svZl_Ow4odWStsO0dPjqxuHj0UrNDtxDmip1M-1762199898-1.0.1.1-MhfL4UbF070ckrjYy3E6397b73xf8mteWHLnDlri3qfZ91b3A0VxycHNJwzJGmU6jb6NMUNfYLKgLFD41xkAa6awrxBgh91_ym2BplCvhmM"
+            },
+            {
+              "name": "_cfuvid",
+              "value": "GFuUNhyOWm9ElThVRkNFFl_BJToi2UOBvynGPeyz5xQ-1762194439188-0.0.1.1-604800000"
+            },
+            {
+              "name": "__stripe_sid",
+              "value": "2b2571d7-c34d-4424-9b6c-5e68b5df02f232e3be"
+            }
+          ],
+          "queryString": [
+            {
+              "name": "token",
+              "value": "01K95N84CX3C3M8G5CWVRY9CAX"
+            }
+          ],
+          "headersSize": 1909
+        },
+        "response": {
+          "status": 0,
+          "statusText": "",
+          "httpVersion": "",
+          "headers": [
+            {
+              "name": "Date",
+              "value": "Mon, 03 Nov 2025 20:06:32 GMT"
+            },
+            {
+              "name": "Connection",
+              "value": "upgrade"
+            },
+            {
+              "name": "Upgrade",
+              "value": "websocket"
+            },
+            {
+              "name": "Sec-WebSocket-Accept",
+              "value": "WITr1C43BcdDRe7glSzbaRa3f0o="
+            },
+            {
+              "name": "cf-cache-status",
+              "value": "DYNAMIC"
+            },
+            {
+              "name": "Server",
+              "value": "cloudflare"
+            },
+            {
+              "name": "CF-RAY",
+              "value": "998e7e2409676def-LIM"
+            },
+            {
+              "name": "alt-svc",
+              "value": "h3=\":443\"; ma=86400"
+            }
+          ],
+          "cookies": [],
+          "content": {
+            "size": 0,
+            "text": ""
+          },
+          "redirectURL": "",
+          "headersSize": 272,
+          "bodySize": -1
+        },
+        "cache": {},
+        "timings": {
+          "blocked": 0,
+          "dns": 65,
+          "connect": 83,
+          "ssl": 21,
+          "send": 0,
+          "wait": 651,
+          "receive": 0
+        },
+        "time": 820,
+        "pageref": "page_1"
+      }
+    ]
+  }
+}

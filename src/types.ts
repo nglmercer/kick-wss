@@ -168,8 +168,7 @@ export interface KickWebSocketOptions {
   debug?: boolean;
   autoReconnect?: boolean;
   reconnectInterval?: number;
-  enableBuffer?: boolean;
-  bufferSize?: number;
+  connectionTimeout?: number;
   filteredEvents?: KickEventType[];
 }
 
@@ -271,4 +270,26 @@ export interface RawPollUpdateData {
 
 export interface RawPollDeleteData {
   id: string;
+}
+
+// Tipo para mensajes de suscripción personalizados
+export interface SubscriptionMessage {
+  event: string;
+  data?: {
+    auth?: string;
+    channel?: string;
+  };
+}
+
+// Configuración extendida del WebSocket
+export interface WebSocketConfig {
+  url?: string;
+  params?: Record<string, string>;
+}
+
+// Opciones extendidas
+export interface ExtendedKickWebSocketOptions extends KickWebSocketOptions {
+  websocketConfig?: WebSocketConfig;
+  customSubscriptions?: string[]; // Array de canales custom
+  subscriptionMessages?: SubscriptionMessage[]; // Mensajes de suscripción completamente personalizados
 }
