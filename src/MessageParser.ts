@@ -11,6 +11,7 @@ import type {
   StreamHostEvent,
   PollUpdateEvent,
   PollDeleteEvent,
+  RewardRedeemedEvent,
   KickEventType,
   KickEventData,
   RawChatMessageData,
@@ -23,6 +24,7 @@ import type {
   RawStreamHostData,
   RawPollUpdateData,
   RawPollDeleteData,
+  RawRewardRedeemedData,
 } from "./types.js";
 
 export enum KickEvent {
@@ -36,6 +38,7 @@ export enum KickEvent {
   StreamHost = "App\\Events\\StreamHostEvent",
   PollUpdate = "App\\Events\\PollUpdateEvent",
   PollDelete = "App\\Events\\PollDeleteEvent",
+  RewardRedeemed = "RewardRedeemedEvent",
 }
 
 export class MessageParser {
@@ -144,6 +147,12 @@ export class MessageParser {
           return {
             type: "PollDelete",
             data: this.parsePollDelete(eventData as RawPollDeleteData),
+          };
+
+        case KickEvent.RewardRedeemed:
+          return {
+            type: "RewardRedeemed",
+            data: this.parseRewardRedeemed(eventData as RawRewardRedeemedData),
           };
 
         default:
@@ -312,6 +321,21 @@ export class MessageParser {
     return {
       poll_id: data.id,
       type: "poll_delete",
+    };
+  }
+
+  /**
+   * Parsea un evento de recompensa canjeada
+   */
+  private static parseRewardRedeemed(data: RawRewardRedeemedData): RewardRedeemedEvent {
+    return {
+      reward_title: data.reward_title,
+      user_id: data.user_id,
+      channel_id: data.channel_id,
+      username: data.username,
+      user_input: data.user_input,
+      reward_background_color: data.reward_background_color,
+      type: "reward_redeemed",
     };
   }
 

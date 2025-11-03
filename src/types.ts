@@ -107,6 +107,16 @@ export interface PollDeleteEvent {
   type: "poll_delete";
 }
 
+export interface RewardRedeemedEvent {
+  reward_title: string;
+  user_id: number;
+  channel_id: number;
+  username: string;
+  user_input: string;
+  reward_background_color: string;
+  type: "reward_redeemed";
+}
+
 // Array de todos los eventos disponibles
 export const KICK_EVENTS = [
   "ChatMessage",
@@ -119,6 +129,7 @@ export const KICK_EVENTS = [
   "StreamHost",
   "PollUpdate",
   "PollDelete",
+  "RewardRedeemed",
   "ready",
   "disconnect",
   "error",
@@ -140,6 +151,7 @@ export interface EventDataMap {
   StreamHost: StreamHostEvent;
   PollUpdate: PollUpdateEvent;
   PollDelete: PollDeleteEvent;
+  RewardRedeemed: RewardRedeemedEvent;
   ready: { channel: string };
   disconnect: { reason?: string };
   error: Error;
@@ -158,6 +170,7 @@ export type KickEventData =
   | StreamHostEvent
   | PollUpdateEvent
   | PollDeleteEvent
+  | RewardRedeemedEvent
   | { channel: string } // ready event
   | { reason?: string } // disconnect event
   | Error // error event
@@ -270,6 +283,15 @@ export interface RawPollUpdateData {
 
 export interface RawPollDeleteData {
   id: string;
+}
+
+export interface RawRewardRedeemedData {
+  reward_title: string;
+  user_id: number;
+  channel_id: number;
+  username: string;
+  user_input: string;
+  reward_background_color: string;
 }
 
 // Tipo para mensajes de suscripción personalizados
